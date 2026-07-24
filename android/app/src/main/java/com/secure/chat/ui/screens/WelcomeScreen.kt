@@ -32,6 +32,20 @@ fun WelcomeScreen(
     var serverUrl by remember { mutableStateOf("wss://chat-2jk8.onrender.com") }
     var nickname by remember { mutableStateOf("") }
     var showServerSettings by remember { mutableStateOf(false) }
+    var showNicknameWarning by remember { mutableStateOf(false) }
+
+    if (showNicknameWarning) {
+        AlertDialog(
+            onDismissRequest = { showNicknameWarning = false },
+            title = { Text("Username Required") },
+            text = { Text("Please enter a Cyber Identity (Nickname) before creating or joining a room.") },
+            confirmButton = {
+                Button(onClick = { showNicknameWarning = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -90,7 +104,13 @@ fun WelcomeScreen(
 
             // Button 1: Create Secure Room
             Button(
-                onClick = { onNavigateToCreate(serverUrl, nickname) },
+                onClick = {
+                    if (nickname.trim().isEmpty()) {
+                        showNicknameWarning = true
+                    } else {
+                        onNavigateToCreate(serverUrl, nickname.trim())
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -130,7 +150,13 @@ fun WelcomeScreen(
 
             // Button 2: Join Existing Room
             OutlinedButton(
-                onClick = { onNavigateToJoin(serverUrl, nickname) },
+                onClick = {
+                    if (nickname.trim().isEmpty()) {
+                        showNicknameWarning = true
+                    } else {
+                        onNavigateToJoin(serverUrl, nickname.trim())
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
