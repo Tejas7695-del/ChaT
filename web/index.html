@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChaT — Encrypted Private Chat</title>
+    <link rel="icon" type="image/png" href="app_icon.png">
+    <link rel="stylesheet" href="style.css?v=2">
+    <!-- Google Fonts & QRCode Library -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- View 1: Welcome Screen -->
+        <div id="view-welcome" class="view active">
+            <div class="hero-card">
+                <img src="app_icon.png" alt="ChaT Logo" class="brand-logo">
+                <h1 class="brand-title">ChaT</h1>
+                <p class="brand-subtitle">Zero-Knowledge End-to-End Encrypted Room Chat</p>
+                
+                <div class="nickname-group">
+                    <label for="nickname-input">Cyber Identity (Nickname):</label>
+                    <input type="text" id="nickname-input" placeholder="Enter your alias..." autocomplete="off">
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-create-room" class="btn btn-primary">
+                        <span>🛡️ Create Secure Room</span>
+                    </button>
+                    <button id="btn-show-join" class="btn btn-secondary">
+                        <span>🔗 Join Existing Room</span>
+                    </button>
+                </div>
+
+                <div class="settings-accordion">
+                    <button id="btn-toggle-settings" class="btn-text">⚙️ Server Connection Settings</button>
+                    <div id="settings-panel" class="settings-panel hidden">
+                        <label for="server-url">Backend WebSocket URL:</label>
+                        <input type="text" id="server-url" value="ws://localhost:8080/ws">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 2: Create Room Screen -->
+        <div id="view-create" class="view hidden">
+            <div class="card">
+                <button class="btn-back" data-target="view-welcome">← Back</button>
+                <h2>New Room Created</h2>
+                <p class="card-subtitle">Share this 6-digit code with your peer to let them join.</p>
+
+                <div class="qr-container">
+                    <div id="qrcode"></div>
+                    <span class="qr-label">🔒 Secret key is embedded in QR code</span>
+                </div>
+
+                <div class="input-group">
+                    <label>Room Code:</label>
+                    <div class="copy-box">
+                        <input type="text" id="created-address" readonly>
+                        <button id="btn-copy-address" class="btn-icon">📋 Copy</button>
+                    </div>
+                </div>
+
+                <button id="btn-enter-created-room" class="btn btn-primary full-width">Enter Chat Room Now</button>
+            </div>
+        </div>
+
+        <!-- View 3: Join Room Screen -->
+        <div id="view-join" class="view hidden">
+            <div class="card">
+                <button class="btn-back" data-target="view-welcome">← Back</button>
+                <h2>Join Private Room</h2>
+                <p class="card-subtitle">Enter the 6-digit Room Code shared with you</p>
+
+                <div class="input-group">
+                    <input type="text" id="join-address-input" placeholder="e.g. A7X9B2" autocomplete="off">
+                    <span id="join-error" class="error-msg hidden"></span>
+                </div>
+
+                <button id="btn-connect-room" class="btn btn-primary full-width">Connect & Enter</button>
+            </div>
+        </div>
+
+        <!-- View 4: Chat Room Screen -->
+        <div id="view-chat" class="view hidden">
+            <div class="chat-header">
+                <button id="btn-leave-chat" class="btn-back">← Leave</button>
+                <button id="btn-terminate-chat" class="btn-back hidden" style="color: #EF4444; border-color: #EF4444; margin-left: 10px;">Terminate Room</button>
+                <div class="header-info" style="margin-left: auto;">
+                    <div class="room-title">
+                        <span id="chat-room-id">Code: ------</span>
+                        <span class="badge-e2ee">🔒 E2EE Active</span>
+                    </div>
+                    <div class="status-indicator">
+                        <span id="status-dot" class="dot disconnected"></span>
+                        <span id="status-text">Disconnected</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-messages" class="chat-messages-container">
+                <!-- Dynamic Message & Media Bubbles -->
+            </div>
+
+            <div class="chat-input-bar">
+                <button id="btn-attach" class="btn-attach" title="Send Image or Video">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                </button>
+                <input type="file" id="file-input" style="display:none;" accept="image/*,video/*">
+
+                <input type="text" id="chat-input" placeholder="Type a message or attach photo/video..." autocomplete="off">
+                <button id="btn-send-msg" class="btn-send">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox hidden">
+        <span id="lightbox-close" class="lightbox-close">&times;</span>
+        <div id="lightbox-content" class="lightbox-content"></div>
+    </div>
+
+    <script src="app.js?v=2"></script>
+</body>
+</html>
