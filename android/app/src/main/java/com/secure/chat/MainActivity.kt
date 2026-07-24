@@ -28,30 +28,38 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "welcome") {
                     composable("welcome") {
                         WelcomeScreen(
-                            onNavigateToCreate = { serverUrl ->
+                            onNavigateToCreate = { serverUrl, nickname ->
                                 val encodedUrl = URLEncoder.encode(serverUrl, StandardCharsets.UTF_8.toString())
-                                navController.navigate("create/$encodedUrl")
+                                val encodedNick = URLEncoder.encode(nickname, StandardCharsets.UTF_8.toString())
+                                navController.navigate("create/$encodedUrl/$encodedNick")
                             },
-                            onNavigateToJoin = { serverUrl ->
+                            onNavigateToJoin = { serverUrl, nickname ->
                                 val encodedUrl = URLEncoder.encode(serverUrl, StandardCharsets.UTF_8.toString())
-                                navController.navigate("join/$encodedUrl")
+                                val encodedNick = URLEncoder.encode(nickname, StandardCharsets.UTF_8.toString())
+                                navController.navigate("join/$encodedUrl/$encodedNick")
                             }
                         )
                     }
 
                     composable(
-                        route = "create/{serverUrl}",
-                        arguments = listOf(navArgument("serverUrl") { type = NavType.StringType })
+                        route = "create/{serverUrl}/{nickname}",
+                        arguments = listOf(
+                            navArgument("serverUrl") { type = NavType.StringType },
+                            navArgument("nickname") { type = NavType.StringType }
+                        )
                     ) { backStackEntry ->
                         val encodedUrl = backStackEntry.arguments?.getString("serverUrl") ?: ""
+                        val encodedNick = backStackEntry.arguments?.getString("nickname") ?: ""
                         val serverUrl = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
+                        val nickname = URLDecoder.decode(encodedNick, StandardCharsets.UTF_8.toString())
 
                         CreateRoomScreen(
                             serverUrl = serverUrl,
                             onBack = { navController.popBackStack() },
                             onEnterChat = { code ->
                                 val encUrl = URLEncoder.encode(serverUrl, StandardCharsets.UTF_8.toString())
-                                navController.navigate("chat/$encUrl/$code/true") {
+                                val encNick = URLEncoder.encode(nickname, StandardCharsets.UTF_8.toString())
+                                navController.navigate("chat/$encUrl/$code/$encNick/true") {
                                     popUpTo("welcome")
                                 }
                             }
@@ -59,18 +67,24 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
-                        route = "join/{serverUrl}",
-                        arguments = listOf(navArgument("serverUrl") { type = NavType.StringType })
+                        route = "join/{serverUrl}/{nickname}",
+                        arguments = listOf(
+                            navArgument("serverUrl") { type = NavType.StringType },
+                            navArgument("nickname") { type = NavType.StringType }
+                        )
                     ) { backStackEntry ->
                         val encodedUrl = backStackEntry.arguments?.getString("serverUrl") ?: ""
+                        val encodedNick = backStackEntry.arguments?.getString("nickname") ?: ""
                         val serverUrl = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
+                        val nickname = URLDecoder.decode(encodedNick, StandardCharsets.UTF_8.toString())
 
                         JoinRoomScreen(
                             serverUrl = serverUrl,
                             onBack = { navController.popBackStack() },
                             onConnect = { code ->
                                 val encUrl = URLEncoder.encode(serverUrl, StandardCharsets.UTF_8.toString())
-                                navController.navigate("chat/$encUrl/$code/false") {
+                                val encNick = URLEncoder.encode(nickname, StandardCharsets.UTF_8.toString())
+                                navController.navigate("chat/$encUrl/$code/$encNick/false") {
                                     popUpTo("welcome")
                                 }
                             }
@@ -78,22 +92,26 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
-                        route = "chat/{serverUrl}/{code}/{isAdmin}",
+                        route = "chat/{serverUrl}/{code}/{nickname}/{isAdmin}",
                         arguments = listOf(
                             navArgument("serverUrl") { type = NavType.StringType },
                             navArgument("code") { type = NavType.StringType },
+                            navArgument("nickname") { type = NavType.StringType },
                             navArgument("isAdmin") { type = NavType.BoolType }
                         )
                     ) { backStackEntry ->
                         val encUrl = backStackEntry.arguments?.getString("serverUrl") ?: ""
                         val code = backStackEntry.arguments?.getString("code") ?: ""
+                        val encNick = backStackEntry.arguments?.getString("nickname") ?: ""
                         val isAdmin = backStackEntry.arguments?.getBoolean("isAdmin") ?: false
 
                         val serverUrl = URLDecoder.decode(encUrl, StandardCharsets.UTF_8.toString())
+                        val nickname = URLDecoder.decode(encNick, StandardCharsets.UTF_8.toString())
 
                         ChatScreen(
                             serverUrl = serverUrl,
                             code = code,
+                            nickname = nickname,
                             isAdmin = isAdmin,
                             onLeave = {
                                 navController.navigate("welcome") {

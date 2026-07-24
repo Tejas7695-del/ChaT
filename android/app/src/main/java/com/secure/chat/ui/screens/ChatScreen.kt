@@ -48,6 +48,7 @@ import org.json.JSONObject
 fun ChatScreen(
     serverUrl: String,
     code: String,
+    nickname: String,
     isAdmin: Boolean,
     onLeave: () -> Unit
 ) {
@@ -67,7 +68,8 @@ fun ChatScreen(
     var showKickedDialog by remember { mutableStateOf(false) }
     var showTerminateConfirm by remember { mutableStateOf(false) }
 
-    LaunchedEffect(roomId, secretKey) {
+    LaunchedEffect(roomId, secretKey, nickname) {
+        webSocketManager.myNickname = if (nickname.isNotBlank()) nickname else "Anon-" + (1000..9999).random()
         webSocketManager.onRoomTerminated = {
             showKickedDialog = true
         }

@@ -26,10 +26,11 @@ import com.secure.chat.ui.theme.NeonIndigo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WelcomeScreen(
-    onNavigateToCreate: (String) -> Unit,
-    onNavigateToJoin: (String) -> Unit
+    onNavigateToCreate: (serverUrl: String, nickname: String) -> Unit,
+    onNavigateToJoin: (serverUrl: String, nickname: String) -> Unit
 ) {
     var serverUrl by remember { mutableStateOf("wss://chat-2jk8.onrender.com") }
+    var nickname by remember { mutableStateOf("") }
     var showServerSettings by remember { mutableStateOf(false) }
 
     Box(
@@ -72,11 +73,24 @@ fun WelcomeScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Nickname Input Field
+            OutlinedTextField(
+                value = nickname,
+                onValueChange = { nickname = it },
+                label = { Text("Cyber Identity (Nickname)") },
+                placeholder = { Text("Enter your alias...") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Button 1: Create Secure Room
             Button(
-                onClick = { onNavigateToCreate(serverUrl) },
+                onClick = { onNavigateToCreate(serverUrl, nickname) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -116,7 +130,7 @@ fun WelcomeScreen(
 
             // Button 2: Join Existing Room
             OutlinedButton(
-                onClick = { onNavigateToJoin(serverUrl) },
+                onClick = { onNavigateToJoin(serverUrl, nickname) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
