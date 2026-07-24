@@ -1,0 +1,18 @@
+{
+  "name": "ChaT — Encrypted Private Chat",
+  "short_name": "ChaT",
+  "description": "Zero-Knowledge End-to-End Encrypted Room Chat",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#07090E",
+  "theme_color": "#07090E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

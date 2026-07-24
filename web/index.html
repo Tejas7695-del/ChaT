@@ -6,6 +6,8 @@
     <title>ChaT — Encrypted Private Chat</title>
     <link rel="icon" type="image/png" href="app_icon.png">
     <link rel="stylesheet" href="style.css?v=2">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#07090E">
     <!-- Google Fonts & QRCode Library -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +42,7 @@
                     <button id="btn-toggle-settings" class="btn-text">⚙️ Server Connection Settings</button>
                     <div id="settings-panel" class="settings-panel hidden">
                         <label for="server-url">Backend WebSocket URL:</label>
-                        <input type="text" id="server-url" value="ws://localhost:8080/ws">
+                        <input type="text" id="server-url" value="wss://chat-2jk8.onrender.com">
                     </div>
                 </div>
             </div>
