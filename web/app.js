@@ -272,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 showView("view-welcome");
                             }
                         } catch (e) {}
-                    } else if (data.msgType === "image" || data.msgType === "video") {
+                    } else if (data.msgType === "image" || data.msgType === "video" || data.msgType === "audio" || data.msgType === "file") {
                         appendMediaMessage(data.sender, decryptedData, data.msgType, false);
                     } else {
                         appendTextMessage(data.sender, decryptedData, false);
@@ -320,8 +320,8 @@ document.addEventListener("DOMContentLoaded", () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Render Media Message (Image or Video)
-    function appendMediaMessage(sender, mediaUrl, msgType, isSelf) {
+    // Render Media Message (Image, Video, Audio or Generic File)
+    function appendMediaMessage(sender, payload, msgType, isSelf) {
         const wrapper = document.createElement("div");
         wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
 
@@ -338,11 +338,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const mediaContainer = document.createElement("div");
         mediaContainer.className = "media-container";
 
+        // Parse payload (format: FILENAME|DATAURL)
+        let fileName = "file";
+        let mediaUrl = payload;
+        if (payload.includes("|")) {
+            const parts = payload.split("|");
+            fileName = parts[0];
+            mediaUrl = parts.slice(1).join("|"); // handle if URL has | inside
+        }
+
         if (msgType === "image") {
             const img = document.createElement("img");
             img.src = mediaUrl;
             img.className = "media-img";
-            img.alt = "Encrypted image";
+            img.alt = fileName;
             img.addEventListener("click", () => openLightbox(mediaUrl, "image"));
             mediaContainer.appendChild(img);
         } else if (msgType === "video") {
@@ -351,12 +360,67 @@ document.addEventListener("DOMContentLoaded", () => {
             video.className = "media-video";
             video.controls = true;
             mediaContainer.appendChild(video);
+        } else if (msgType === "audio") {
+            const audio = document.createElement("audio");
+            audio.src = mediaUrl;
+            audio.controls = true;
+            audio.style.marginTop = "5px";
+            audio.style.width = "100%";
+            mediaContainer.appendChild(audio);
+        } else {
+            // Generic file attachment
+            const fileLink = document.createElement("div");
+            fileLink.style.display = "flex";
+            fileLink.style.alignItems = "center";
+            fileLink.style.padding = "10px";
+            fileLink.style.background = "rgba(255, 255, 255, 0.05)";
+            fileLink.style.borderRadius = "8px";
+            fileLink.style.color = "#00F0FF";
+            fileLink.style.border = "1px dashed rgba(0, 240, 255, 0.3)";
+            fileLink.innerHTML = `
+                <span style="font-size: 24px; margin-right: 12px;">📁</span>
+                <div style="flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <strong style="text-decoration: underline; cursor: pointer;">${fileName}</strong>
+                </div>
+            `;
+            fileLink.addEventListener("click", () => downloadFile(mediaUrl, fileName));
+            mediaContainer.appendChild(fileLink);
+        }
+
+        // Add a download button for media
+        if (msgType === "image" || msgType === "video" || msgType === "audio") {
+            const downloadBtn = document.createElement("button");
+            downloadBtn.innerText = `Save to Device`;
+            downloadBtn.style.display = "inline-flex";
+            downloadBtn.style.alignItems = "center";
+            downloadBtn.style.marginTop = "8px";
+            downloadBtn.style.fontSize = "11px";
+            downloadBtn.style.padding = "4px 8px";
+            downloadBtn.style.background = "rgba(0, 240, 255, 0.1)";
+            downloadBtn.style.border = "1px solid rgba(0, 240, 255, 0.3)";
+            downloadBtn.style.color = "#00F0FF";
+            downloadBtn.style.borderRadius = "4px";
+            downloadBtn.style.cursor = "pointer";
+            downloadBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                downloadFile(mediaUrl, fileName);
+            });
+            mediaContainer.appendChild(downloadBtn);
         }
 
         bubble.appendChild(mediaContainer);
         wrapper.appendChild(bubble);
         chatMessages.appendChild(wrapper);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function downloadFile(dataUrl, fileName) {
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // Lightbox Modal
@@ -410,14 +474,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const file = e.target.files[0];
         if (!file || !socket || socket.readyState !== WebSocket.OPEN) return;
 
-        // Check if file is image or video
-        const isImage = file.type.startsWith("image/");
-        const isVideo = file.type.startsWith("video/");
-        if (!isImage && !isVideo) {
-            alert("Please select an image or video file.");
-            return;
-        }
-
         // Check size limit (max 15MB for in-browser real-time WebSocket)
         if (file.size > 15 * 1024 * 1024) {
             alert("File is too large. Please select a file smaller than 15MB.");
@@ -427,9 +483,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             const dataUrl = event.target.result;
-            const msgType = isImage ? "image" : "video";
+            
+            let msgType = "file";
+            if (file.type.startsWith("image/")) {
+                msgType = "image";
+            } else if (file.type.startsWith("video/")) {
+                msgType = "video";
+            } else if (file.type.startsWith("audio/")) {
+                msgType = "audio";
+            }
 
-            const encryptedPayload = await CryptoHelper.encrypt(dataUrl, currentSecretKey);
+            const rawPayload = `${file.name}|${dataUrl}`;
+            const encryptedPayload = await CryptoHelper.encrypt(rawPayload, currentSecretKey);
 
             const msgObj = {
                 sender: myNickname,
@@ -438,7 +503,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             socket.send(JSON.stringify(msgObj));
-            appendMediaMessage(myNickname, dataUrl, msgType, true);
+            appendMediaMessage(myNickname, rawPayload, msgType, true);
         };
         reader.readAsDataURL(file);
 

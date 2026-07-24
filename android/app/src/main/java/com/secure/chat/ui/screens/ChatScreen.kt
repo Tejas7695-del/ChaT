@@ -3,6 +3,13 @@ package com.secure.chat.ui.screens
 import android.graphics.BitmapFactory
 import android.util.Base64
 import android.widget.Toast
+import android.provider.OpenableColumns
+import android.content.Context
+import android.net.Uri
+import java.io.OutputStream
+import android.os.Environment
+import android.content.ContentValues
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -99,22 +106,32 @@ fun ChatScreen(
                 val size = fileDescriptor?.statSize ?: 0
                 fileDescriptor?.close()
 
-                if (size > 5 * 1024 * 1024) {
-                    Toast.makeText(context, "File too large (Max 5MB)", Toast.LENGTH_SHORT).show()
+                if (size > 15 * 1024 * 1024) {
+                    Toast.makeText(context, "File too large (Max 15MB)", Toast.LENGTH_SHORT).show()
                     return@let
                 }
 
+                val fileName = getFileName(context, uri)
                 val inputStream = context.contentResolver.openInputStream(uri)
                 val bytes = inputStream?.readBytes()
                 inputStream?.close()
 
                 if (bytes != null) {
-                    val mimeType = context.contentResolver.getType(uri) ?: "image/png"
+                    val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
                     val base64Str = Base64.encodeToString(bytes, Base64.NO_WRAP)
                     val dataUrl = "data:$mimeType;base64,$base64Str"
 
-                    val msgType = if (mimeType.startsWith("image/")) "image" else "file"
-                    webSocketManager.sendMessage(dataUrl, msgType)
+                    var msgType = "file"
+                    if (mimeType.startsWith("image/")) {
+                        msgType = "image"
+                    } else if (mimeType.startsWith("video/")) {
+                        msgType = "video"
+                    } else if (mimeType.startsWith("audio/")) {
+                        msgType = "audio"
+                    }
+
+                    val rawPayload = "$fileName|$dataUrl"
+                    webSocketManager.sendMessage(rawPayload, msgType)
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Failed to read attachment", Toast.LENGTH_SHORT).show()
@@ -275,7 +292,7 @@ fun ChatScreen(
                 ) {
                     // Attachment Trigger Button
                     IconButton(
-                        onClick = { filePickerLauncher.launch("image/*") },
+                        onClick = { filePickerLauncher.launch("*/*") },
                         modifier = Modifier.size(44.dp)
                     ) {
                         Icon(
@@ -329,9 +346,24 @@ fun ChatScreen(
 
 @Composable
 fun MessageBubble(message: ChatMessage) {
+    val context = LocalContext.current
     val alignment = if (message.isFromMe) Alignment.End else Alignment.Start
     val bubbleColor = if (message.isFromMe) BubbleSelf else BubbleOther
     val textColor = Color.White
+
+    // Parse payload (format: FILENAME|DATAURL)
+    val parsed = remember(message.text) {
+        if (message.text.contains("|")) {
+            val idx = message.text.indexOf("|")
+            val name = message.text.substring(0, idx)
+            val url = message.text.substring(idx + 1)
+            Pair(name, url)
+        } else {
+            Pair("file", message.text)
+        }
+    }
+    val fileName = parsed.first
+    val dataUrl = parsed.second
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -361,21 +393,20 @@ fun MessageBubble(message: ChatMessage) {
                 horizontalAlignment = Alignment.Start
             ) {
                 if (message.msgType == "image") {
-                    val imageBitmap = remember(message.text) {
-                        base64ToImageBitmap(message.text)
+                    val imageBitmap = remember(dataUrl) {
+                        base64ToImageBitmap(dataUrl)
                     }
 
                     if (imageBitmap != null) {
                         Image(
                             bitmap = imageBitmap,
-                            contentDescription = "Shared Image",
+                            contentDescription = fileName,
                             modifier = Modifier
                                 .widthIn(max = 240.dp)
                                 .heightIn(max = 240.dp)
                                 .background(Color.DarkGray, RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Fit
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
                     } else {
                         Text(
                             text = "[Corrupted Image]",
@@ -383,9 +414,44 @@ fun MessageBubble(message: ChatMessage) {
                             fontSize = 14.sp
                         )
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { saveFileToDevice(context, fileName, dataUrl) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Save Image", color = ElectricCyan, fontSize = 12.sp)
+                    }
+                } else if (message.msgType == "video" || message.msgType == "audio" || message.msgType == "file") {
+                    val iconStr = when(message.msgType) {
+                        "video" -> "🎥 Video"
+                        "audio" -> "🎵 Audio"
+                        else -> "📄 Document"
+                    }
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 240.dp)
+                            .padding(8.dp)
+                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(text = iconStr, fontWeight = FontWeight.Bold, color = ElectricCyan, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = fileName, color = Color.White, fontSize = 12.sp, maxLines = 1)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { saveFileToDevice(context, fileName, dataUrl) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Save to Device", color = ElectricCyan, fontSize = 12.sp)
+                        }
+                    }
                 } else {
                     Text(
-                        text = message.text,
+                        text = dataUrl,
                         color = textColor,
                         fontSize = 14.sp
                     )
@@ -423,5 +489,71 @@ private fun base64ToImageBitmap(base64Str: String): ImageBitmap? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+private fun getFileName(context: Context, uri: Uri): String {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        try {
+            if (cursor != null && cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) {
+                    result = cursor.getString(index)
+                }
+            }
+        } finally {
+            cursor?.close()
+        }
+    }
+    if (result == null) {
+        result = uri.path
+        val cut = result?.lastIndexOf('/')
+        if (cut != null && cut != -1) {
+            result = result.substring(cut + 1)
+        }
+    }
+    return result ?: "file"
+}
+
+private fun saveFileToDevice(context: Context, fileName: String, base64DataUrl: String) {
+    try {
+        val cleanBase64 = if (base64DataUrl.startsWith("data:")) {
+            base64DataUrl.substringAfter("base64,")
+        } else {
+            base64DataUrl
+        }
+        val mimeType = if (base64DataUrl.startsWith("data:")) {
+            base64DataUrl.substringBefore(";base64").substringAfter("data:")
+        } else {
+            "application/octet-stream"
+        }
+
+        val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val resolver = context.contentResolver
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { it.write(decodedBytes) }
+                Toast.makeText(context, "Saved to Downloads: $fileName", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Failed to save file", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val file = java.io.File(downloadsDir, fileName)
+            java.io.FileOutputStream(file).use { it.write(decodedBytes) }
+            Toast.makeText(context, "Saved to Downloads: ${file.absolutePath}", Toast.LENGTH_SHORT).show()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Failed to save file: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
