@@ -17,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.secure.chat.R
 import com.secure.chat.ui.theme.ElectricCyan
 import com.secure.chat.ui.theme.NeonIndigo
 
@@ -26,7 +29,7 @@ fun WelcomeScreen(
     onNavigateToCreate: (String) -> Unit,
     onNavigateToJoin: (String) -> Unit
 ) {
-    var serverUrl by remember { mutableStateOf("ws://10.0.2.2:8080/ws") }
+    var serverUrl by remember { mutableStateOf("wss://chat-2jk8.onrender.com") }
     var showServerSettings by remember { mutableStateOf(false) }
 
     Box(
@@ -42,22 +45,14 @@ fun WelcomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Shield & Lock Hero Icon
-            Surface(
-                modifier = Modifier.size(100.dp),
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "Lock",
-                        modifier = Modifier.size(48.dp),
-                        tint = NeonIndigo
-                    )
-                }
-            }
+            // App Logo Cover Image
+            Image(
+                painter = painterResource(id = R.drawable.app_logo),
+                contentDescription = "ChaT Logo",
+                modifier = Modifier
+                    .size(120.dp)
+                    .background(Color.Transparent)
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -49,10 +49,9 @@ class MainActivity : ComponentActivity() {
                         CreateRoomScreen(
                             serverUrl = serverUrl,
                             onBack = { navController.popBackStack() },
-                            onEnterChat = { roomId, secretKey ->
+                            onEnterChat = { code ->
                                 val encUrl = URLEncoder.encode(serverUrl, StandardCharsets.UTF_8.toString())
-                                val encKey = URLEncoder.encode(secretKey, StandardCharsets.UTF_8.toString())
-                                navController.navigate("chat/$encUrl/$roomId/$encKey") {
+                                navController.navigate("chat/$encUrl/$code/true") {
                                     popUpTo("welcome")
                                 }
                             }
@@ -69,10 +68,9 @@ class MainActivity : ComponentActivity() {
                         JoinRoomScreen(
                             serverUrl = serverUrl,
                             onBack = { navController.popBackStack() },
-                            onConnect = { roomId, secretKey ->
+                            onConnect = { code ->
                                 val encUrl = URLEncoder.encode(serverUrl, StandardCharsets.UTF_8.toString())
-                                val encKey = URLEncoder.encode(secretKey, StandardCharsets.UTF_8.toString())
-                                navController.navigate("chat/$encUrl/$roomId/$encKey") {
+                                navController.navigate("chat/$encUrl/$code/false") {
                                     popUpTo("welcome")
                                 }
                             }
@@ -80,24 +78,23 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
-                        route = "chat/{serverUrl}/{roomId}/{secretKey}",
+                        route = "chat/{serverUrl}/{code}/{isAdmin}",
                         arguments = listOf(
                             navArgument("serverUrl") { type = NavType.StringType },
-                            navArgument("roomId") { type = NavType.StringType },
-                            navArgument("secretKey") { type = NavType.StringType }
+                            navArgument("code") { type = NavType.StringType },
+                            navArgument("isAdmin") { type = NavType.BoolType }
                         )
                     ) { backStackEntry ->
                         val encUrl = backStackEntry.arguments?.getString("serverUrl") ?: ""
-                        val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
-                        val encKey = backStackEntry.arguments?.getString("secretKey") ?: ""
+                        val code = backStackEntry.arguments?.getString("code") ?: ""
+                        val isAdmin = backStackEntry.arguments?.getBoolean("isAdmin") ?: false
 
                         val serverUrl = URLDecoder.decode(encUrl, StandardCharsets.UTF_8.toString())
-                        val secretKey = URLDecoder.decode(encKey, StandardCharsets.UTF_8.toString())
 
                         ChatScreen(
                             serverUrl = serverUrl,
-                            roomId = roomId,
-                            secretKey = secretKey,
+                            code = code,
+                            isAdmin = isAdmin,
                             onLeave = {
                                 navController.navigate("welcome") {
                                     popUpTo("welcome") { inclusive = true }

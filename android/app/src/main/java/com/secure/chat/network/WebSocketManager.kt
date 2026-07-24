@@ -15,7 +15,8 @@ data class ChatMessage(
     val text: String,
     val timestamp: Long = System.currentTimeMillis(),
     val isFromMe: Boolean = false,
-    val isEncrypted: Boolean = true
+    val isEncrypted: Boolean = true,
+    val msgType: String = "text"
 )
 
 sealed class ConnectionStatus {
@@ -42,6 +43,7 @@ class WebSocketManager {
     private var currentRoomId: String? = null
     private var currentSecretKey: String? = null
     var myNickname: String = "Anon-" + (1000..9999).random()
+    var onRoomTerminated: (() -> Unit)? = null
 
     fun connect(serverUrl: String, roomId: String, secretKey: String) {
         currentRoomId = roomId
@@ -62,6 +64,7 @@ class WebSocketManager {
                 try {
                     val json = JSONObject(text)
                     val sender = json.optString("sender", "Peer")
+                    val msgType = json.optString("msgType", "text")
                     val encryptedPayload = json.optString("payload", "")
 
                     val key = currentSecretKey
@@ -71,10 +74,21 @@ class WebSocketManager {
                         "[Unencrypted message]"
                     }
 
+                    if (msgType == "control") {
+                        try {
+                            val controlJson = JSONObject(decryptedText)
+                            if (controlJson.optString("action") == "terminate") {
+                                onRoomTerminated?.invoke()
+                            }
+                        } catch (e: Exception) {}
+                        return
+                    }
+
                     val incomingMsg = ChatMessage(
                         senderNickname = sender,
                         text = decryptedText,
-                        isFromMe = false
+                        isFromMe = false,
+                        msgType = msgType
                     )
 
                     _messages.value = _messages.value + incomingMsg
@@ -93,7 +107,7 @@ class WebSocketManager {
         })
     }
 
-    fun sendMessage(text: String): Boolean {
+    fun sendMessage(text: String, msgType: String = "text"): Boolean {
         val ws = webSocket ?: return false
         val key = currentSecretKey ?: return false
         if (text.isBlank()) return false
@@ -102,14 +116,16 @@ class WebSocketManager {
 
         val json = JSONObject()
         json.put("sender", myNickname)
+        json.put("msgType", msgType)
         json.put("payload", encryptedPayload)
 
         val sent = ws.send(json.toString())
-        if (sent) {
+        if (sent && msgType != "control") {
             val myMsg = ChatMessage(
                 senderNickname = myNickname,
                 text = text,
-                isFromMe = true
+                isFromMe = true,
+                msgType = msgType
             )
             _messages.value = _messages.value + myMsg
         }

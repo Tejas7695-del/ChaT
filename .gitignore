@@ -1,0 +1,18 @@
+# Android build files
+**/build/
+**/.gradle/
+**/local.properties
+**/.idea/
+**/*.iml
+
+# Node/Web modules
+**/node_modules/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# OS specific
+.DS_Store
+Thumbs.db

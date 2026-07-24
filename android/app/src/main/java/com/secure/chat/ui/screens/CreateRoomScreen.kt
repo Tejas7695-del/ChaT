@@ -34,18 +34,16 @@ import com.secure.chat.ui.theme.NeonIndigo
 fun CreateRoomScreen(
     serverUrl: String,
     onBack: () -> Unit,
-    onEnterChat: (roomId: String, secretKey: String) -> Unit
+    onEnterChat: (code: String) -> Unit
 ) {
     val context = LocalContext.current
 
-    // Generate room ID and Secret key once
-    val roomId = remember { CryptoUtils.generateRoomId() }
-    val secretKey = remember { CryptoUtils.generateSecretKey() }
-    val roomAddress = remember { "$roomId#$secretKey" }
+    // Generate 6-digit room code
+    val code = remember { CryptoUtils.generate6DigitCode() }
 
     // Generate QR Code bitmap
-    val qrBitmap = remember(roomAddress) {
-        generateQrBitmap(roomAddress)
+    val qrBitmap = remember(code) {
+        generateQrBitmap(code)
     }
 
     Scaffold(
@@ -117,7 +115,7 @@ fun CreateRoomScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Key is embedded in QR code",
+                                text = "Code is embedded in QR code",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
@@ -125,7 +123,7 @@ fun CreateRoomScreen(
                     }
                 }
 
-                // Copy Room Address Card
+                // Copy Room Code Card
                 OutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
@@ -139,23 +137,23 @@ fun CreateRoomScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Room Address",
+                                text = "Room Code",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
                             Text(
-                                text = roomAddress,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                text = code,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
                         }
 
                         IconButton(onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("Room Address", roomAddress)
+                            val clip = ClipData.newPlainText("Room Code", code)
                             clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, "Room Address Copied!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Room Code Copied!", Toast.LENGTH_SHORT).show()
                         }) {
                             Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = NeonIndigo)
                         }
@@ -164,7 +162,7 @@ fun CreateRoomScreen(
             }
 
             Button(
-                onClick = { onEnterChat(roomId, secretKey) },
+                onClick = { onEnterChat(code) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

@@ -1,6 +1,7 @@
 package com.secure.chat.crypto
 
 import android.util.Base64
+import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -9,9 +10,25 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object CryptoUtils {
-    private const me: String = "AES/GCM/NoPadding"
-    private const TAG_LENGTH_BIT = 128
-    private const IV_LENGTH_BYTE = 12
+    private const val AES_MODE = "AES/GCM/NoPadding"
+    private const val TAG_LENGTH_BIT = 128
+    private const val IV_LENGTH_BYTE = 12
+
+    fun generate6DigitCode(): String {
+        val allowedChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        val random = SecureRandom()
+        return (1..6)
+            .map { allowedChars[random.nextInt(allowedChars.length)] }
+            .joinToString("")
+    }
+
+    fun deriveFromCode(code: String): Pair<String, String> {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(code.toByteArray(Charsets.UTF_8))
+        val roomId = hashBytes.sliceArray(0 until 3).joinToString("") { "%02x".format(it) }
+        val secretKey = Base64.encodeToString(hashBytes, Base64.URL_SAFE or Base64.NO_WRAP)
+        return Pair(roomId, secretKey)
+    }
 
     /**
      * Generates a random 256-bit AES secret key formatted in Base64

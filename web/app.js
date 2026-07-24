@@ -28,7 +28,7 @@ class CryptoHelper {
         const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
         
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const roomId = hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+        const roomId = hashArray.slice(0, 3).map(b => b.toString(16).padStart(2, '0')).join('');
         const secretKey = this.bufferToBase64(hashBuffer);
         
         return { roomId, secretKey };

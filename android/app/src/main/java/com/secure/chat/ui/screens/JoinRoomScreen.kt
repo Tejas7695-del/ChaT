@@ -24,7 +24,7 @@ import com.secure.chat.ui.theme.NeonIndigo
 fun JoinRoomScreen(
     serverUrl: String,
     onBack: () -> Unit,
-    onConnect: (roomId: String, secretKey: String) -> Unit
+    onConnect: (code: String) -> Unit
 ) {
     val context = LocalContext.current
     var roomInput by remember { mutableStateOf("") }
@@ -56,7 +56,7 @@ fun JoinRoomScreen(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Enter Room Address",
+                    text = "Enter Room Code",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -65,7 +65,7 @@ fun JoinRoomScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Paste the room address shared with you (Format: room_id#encryption_key)",
+                    text = "Enter the 6-digit Room Code shared with you (e.g., A7X9B2)",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -79,7 +79,7 @@ fun JoinRoomScreen(
                         roomInput = it
                         errorMessage = null
                     },
-                    label = { Text("Room Address (room_id#key)") },
+                    label = { Text("Room Code") },
                     leadingIcon = {
                         Icon(Icons.Default.Key, contentDescription = null, tint = ElectricCyan)
                     },
@@ -101,11 +101,11 @@ fun JoinRoomScreen(
 
             Button(
                 onClick = {
-                    val parsed = CryptoUtils.parseRoomAddress(roomInput)
-                    if (parsed != null) {
-                        onConnect(parsed.first, parsed.second)
+                    val code = roomInput.trim().uppercase()
+                    if (code.length == 6) {
+                        onConnect(code)
                     } else {
-                        errorMessage = "Invalid Room Address. Must be in format: room_id#key"
+                        errorMessage = "Invalid Room Code. It must be exactly 6 characters."
                     }
                 },
                 modifier = Modifier
