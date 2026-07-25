@@ -70,6 +70,9 @@ dependencies {
     // ZXing for QR Code generation
     implementation("com.google.zxing:core:3.5.3")
 
+    // Google Play Services Code Scanner (QR Scan)
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 

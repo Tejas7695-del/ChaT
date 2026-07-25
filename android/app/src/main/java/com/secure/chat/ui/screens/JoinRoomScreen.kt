@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.secure.chat.crypto.CryptoUtils
 import com.secure.chat.ui.theme.ElectricCyan
 import com.secure.chat.ui.theme.NeonIndigo
@@ -82,6 +84,26 @@ fun JoinRoomScreen(
                     label = { Text("Room Code") },
                     leadingIcon = {
                         Icon(Icons.Default.Key, contentDescription = null, tint = ElectricCyan)
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val scanner = GmsBarcodeScanning.getClient(context)
+                            scanner.startScan()
+                                .addOnSuccessListener { barcode ->
+                                    val scannedCode = barcode.rawValue?.trim()?.uppercase()
+                                    if (scannedCode != null && scannedCode.length == 6) {
+                                        roomInput = scannedCode
+                                        onConnect(scannedCode)
+                                    } else if (scannedCode != null) {
+                                        errorMessage = "Invalid QR Code format"
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(context, "Scanning cancelled or failed", Toast.LENGTH_SHORT).show()
+                                }
+                        }) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR Code", tint = ElectricCyan)
+                        }
                     },
                     isError = errorMessage != null,
                     singleLine = true,

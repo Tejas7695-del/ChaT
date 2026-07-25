@@ -27,6 +27,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.QrCode
+import android.graphics.Bitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,6 +78,7 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
     var showKickedDialog by remember { mutableStateOf(false) }
     var showTerminateConfirm by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(roomId, secretKey, nickname) {
         webSocketManager.myNickname = if (nickname.isNotBlank()) nickname else "Anon-" + (1000..9999).random()
@@ -191,6 +196,46 @@ fun ChatScreen(
         )
     }
 
+    // QR Code Dialog for all members
+    if (showQrDialog) {
+        val qrBitmap = remember(code) {
+            generateQrBitmap(code)
+        }
+        AlertDialog(
+            onDismissRequest = { showQrDialog = false },
+            title = { Text("Scan to Join Room") },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp)
+                ) {
+                    if (qrBitmap != null) {
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "QR Code",
+                            modifier = Modifier
+                                .size(200.dp)
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .padding(8.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Room Code: $code",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showQrDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -243,6 +288,13 @@ fun ChatScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showQrDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.QrCode,
+                            contentDescription = "Show Room QR",
+                            tint = ElectricCyan
+                        )
+                    }
                     if (isAdmin) {
                         IconButton(onClick = { showTerminateConfirm = true }) {
                             Icon(
@@ -555,5 +607,24 @@ private fun saveFileToDevice(context: Context, fileName: String, base64DataUrl: 
     } catch (e: Exception) {
         e.printStackTrace()
         Toast.makeText(context, "Failed to save file: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
+
+private fun generateQrBitmap(content: String): Bitmap? {
+    return try {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, 512, 512)
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bmp.setPixel(x, y, if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        bmp
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }
