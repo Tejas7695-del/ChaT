@@ -25,7 +25,10 @@ jobs:
       uses: gradle/actions/setup-gradle@v3
 
     - name: Build with Gradle
-      run: gradle assembleDebug --project-dir android
+      run: |
+        chmod +x android/gradlew
+        cd android
+        ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
