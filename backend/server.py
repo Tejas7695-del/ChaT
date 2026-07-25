@@ -51,7 +51,7 @@ async def handler(websocket):
 
 async def main():
     # Listen on 0.0.0.0:8080
-    async with serve(handler, "0.0.0.0", 8080, ping_interval=20, ping_timeout=20):
+    async with serve(handler, "0.0.0.0", 8080, ping_interval=20, ping_timeout=20, max_size=30_000_000):
         logging.info("ChaT WebSocket backend running on ws://0.0.0.0:8080")
         await asyncio.Future()
 
