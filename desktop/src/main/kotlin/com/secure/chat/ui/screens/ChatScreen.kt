@@ -2,9 +2,11 @@ package com.secure.chat.ui.screens
 
 import java.awt.FileDialog
 import java.awt.Frame
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
-import android.graphics.Bitmap
+import javax.imageio.ImageIO
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,7 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,8 +46,6 @@ import com.secure.chat.ui.theme.ElectricCyan
 import com.secure.chat.ui.theme.EmeraldGreen
 import com.secure.chat.ui.theme.NeonIndigo
 import org.json.JSONObject
-import java.io.ByteArrayInputStream
-import javax.imageio.ImageIO
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,7 +148,7 @@ fun ChatScreen(
 
     // QR Code Dialog for all members
     if (showQrDialog) {
-        val qrBitmap = remember(code) {
+        val qrImage = remember(code) {
             generateQrBitmap(code)
         }
         AlertDialog(
@@ -159,9 +159,9 @@ fun ChatScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth().padding(16.dp)
                 ) {
-                    if (qrBitmap != null) {
+                    if (qrImage != null) {
                         Image(
-                            bitmap = qrBitmap.asImageBitmap(),
+                            bitmap = qrImage.toComposeImageBitmap(),
                             contentDescription = "QR Code",
                             modifier = Modifier
                                 .size(200.dp)
@@ -534,15 +534,7 @@ private fun base64ToImageBitmap(base64Str: String): ImageBitmap? {
         }
         val decodedBytes = java.util.Base64.getDecoder().decode(cleanBase64)
         val image = ImageIO.read(ByteArrayInputStream(decodedBytes))
-        
-        // Convert java.awt.image.BufferedImage to Compose ImageBitmap
-        val width = image.width
-        val height = image.height
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val buffer = IntArray(width * height)
-        image.getRGB(0, 0, width, height, buffer, 0, width)
-        bitmap.setPixels(buffer, 0, width, 0, 0, width, height)
-        bitmap.asImageBitmap()
+        image.toComposeImageBitmap()
     } catch (e: Exception) {
         e.printStackTrace()
         null
@@ -573,19 +565,20 @@ private fun saveFileToDevice(fileName: String, base64DataUrl: String, onToast: (
     }
 }
 
-private fun generateQrBitmap(content: String): Bitmap? {
+private fun generateQrBitmap(content: String): BufferedImage? {
     return try {
         val writer = QRCodeWriter()
         val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, 512, 512)
         val width = bitMatrix.width
         val height = bitMatrix.height
-        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         for (x in 0 until width) {
             for (y in 0 until height) {
-                bmp.setPixel(x, y, if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                val color = if (bitMatrix.get(x, y)) 0x000000 else 0xFFFFFF
+                image.setRGB(x, y, color)
             }
         }
-        bmp
+        image
     } catch (e: Exception) {
         e.printStackTrace()
         null

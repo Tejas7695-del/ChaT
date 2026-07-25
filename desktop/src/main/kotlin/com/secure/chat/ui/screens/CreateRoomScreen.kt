@@ -2,7 +2,7 @@ package com.secure.chat.ui.screens
 
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import android.graphics.Bitmap
+import java.awt.image.BufferedImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,8 +37,8 @@ fun CreateRoomScreen(
     val code = remember { CryptoUtils.generate6DigitCode() }
     var copiedMessageVisible by remember { mutableStateOf(false) }
 
-    // Generate QR Code bitmap
-    val qrBitmap = remember(code) {
+    // Generate QR Code BufferedImage
+    val qrImage = remember(code) {
         generateQrBitmap(code)
     }
 
@@ -92,9 +92,9 @@ fun CreateRoomScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        if (qrBitmap != null) {
+                        if (qrImage != null) {
                             Image(
-                                bitmap = qrBitmap.asImageBitmap(),
+                                bitmap = qrImage.toComposeImageBitmap(),
                                 contentDescription = "QR Code",
                                 modifier = Modifier
                                     .size(200.dp)
@@ -179,19 +179,20 @@ fun CreateRoomScreen(
     }
 }
 
-private fun generateQrBitmap(content: String): Bitmap? {
+private fun generateQrBitmap(content: String): BufferedImage? {
     return try {
         val writer = QRCodeWriter()
         val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, 512, 512)
         val width = bitMatrix.width
         val height = bitMatrix.height
-        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         for (x in 0 until width) {
             for (y in 0 until height) {
-                bmp.setPixel(x, y, if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                val color = if (bitMatrix.get(x, y)) 0x000000 else 0xFFFFFF
+                image.setRGB(x, y, color)
             }
         }
-        bmp
+        image
     } catch (e: Exception) {
         e.printStackTrace()
         null
