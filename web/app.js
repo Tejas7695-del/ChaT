@@ -135,6 +135,36 @@ document.addEventListener("DOMContentLoaded", () => {
     let myNickname = "";
     let isAdmin = false;
 
+    const termsCheckbox = document.getElementById("terms-checkbox");
+    const openTermsModal = document.getElementById("open-terms-modal");
+
+    function updateWelcomeButtons() {
+        const isChecked = termsCheckbox.checked;
+        btnCreateRoom.disabled = !isChecked;
+        btnShowJoin.disabled = !isChecked;
+        btnCreateRoom.style.opacity = isChecked ? "1" : "0.5";
+        btnShowJoin.style.opacity = isChecked ? "1" : "0.5";
+        btnCreateRoom.style.cursor = isChecked ? "pointer" : "not-allowed";
+        btnShowJoin.style.cursor = isChecked ? "pointer" : "not-allowed";
+    }
+
+    if (termsCheckbox) {
+        termsCheckbox.addEventListener("change", updateWelcomeButtons);
+        updateWelcomeButtons();
+    }
+
+    if (openTermsModal) {
+        openTermsModal.addEventListener("click", (e) => {
+            e.preventDefault();
+            alert(
+                "Terms & Conditions\n\n" +
+                "1. Zero-Knowledge E2EE:\nAll chats and attachments are encrypted locally on your device. Decryption keys never leave your device, and the relay server has no access to your messages or files.\n\n" +
+                "2. Zero Retention:\nNo conversation history, files, metadata, or usernames are saved on any database. Rooms are completely deleted from server memory as soon as all users disconnect.\n\n" +
+                "3. User Responsibility:\nYou are solely responsible for keeping your 6-digit Room Codes safe. Lost codes cannot be recovered by the developers under any circumstances."
+            );
+        });
+    }
+
     function showView(viewId) {
         views.forEach(v => {
             if (v.id === viewId) {
