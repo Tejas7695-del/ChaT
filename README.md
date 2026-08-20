@@ -40,12 +40,12 @@ ChaT is a lightweight, modern, and zero-knowledge room-based chat application th
 5. On your phone, open the `.apk` file and tap **Install** (allow installation from "Unknown Sources" if prompted by your system).
 
 ### Windows 11 Client (Desktop)
-1. Open the **`desktop`** folder in Android Studio.
-2. From the run configuration dropdown at the top toolbar, select **`desktop [packageDistributionForCurrentOS]`**.
-3. Click the green **Play (Run) `▶`** button.
-4. Once the build completes, open Windows File Explorer and navigate to:
-   `desktop/build/compose/binaries/main/exe/`
-5. Double-click **`ChaT-1.0.0.exe`** to install the standalone app natively on Windows 11! A shortcut named **ChaT Installer** will also be created on your Desktop.
+1. Open your web browser and go to your GitHub repository's **Actions** tab:
+   `https://github.com/Tejas7695-del/ChaT/actions`
+2. Click on the latest run of the **Build Windows Desktop Installer** workflow.
+3. Scroll down to the **Artifacts** section at the bottom of the page.
+4. Download the **`ChaT-Windows-Installer`** zip file, extract it, and double-click the **`ChaT-1.0.0.msi`** installer to install it.
+5. Launch the app directly from your Windows Start Menu!
 
 ---
 
