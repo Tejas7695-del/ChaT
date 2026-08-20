@@ -73,11 +73,13 @@ jobs:
         ./gradlew packageDistributionForCurrentOS
       shell: bash
 
-    - name: Upload Windows MSI Artifact
+    - name: Upload Windows Binaries Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: windows-msi
-        path: desktop/build/compose/binaries/main/msi/
+        name: windows-binaries
+        path: |
+          desktop/build/compose/binaries/main/msi/
+          desktop/build/compose/binaries/main/exe/
 
   create-release:
     needs: [build-android, build-windows]
@@ -92,15 +94,18 @@ jobs:
         name: android-apk
         path: release-artifacts/
 
-    - name: Download Windows MSI
+    - name: Download Windows Binaries
       uses: actions/download-artifact@v4
       with:
-        name: windows-msi
+        name: windows-binaries
         path: release-artifacts/
 
     - name: Rename and Prepare Assets
       run: |
         mv release-artifacts/app-debug.apk release-artifacts/ChaT-Android.apk
+        # Rename default package name to clean names
+        mv release-artifacts/exe/ChaT-1.0.0.exe release-artifacts/ChaT-Windows.exe || true
+        mv release-artifacts/msi/ChaT-1.0.0.msi release-artifacts/ChaT-Windows.msi || true
         ls -la release-artifacts/
 
     - name: Create GitHub Release
@@ -108,7 +113,8 @@ jobs:
       with:
         files: |
           release-artifacts/ChaT-Android.apk
-          release-artifacts/*.msi
+          release-artifacts/ChaT-Windows.exe
+          release-artifacts/ChaT-Windows.msi
         draft: false
         prerelease: false
       env:
