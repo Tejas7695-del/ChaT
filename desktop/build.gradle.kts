@@ -32,11 +32,11 @@ compose.desktop {
             targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi, org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe)
             packageName = "ChaT"
             packageVersion = "1.0.0"
+            description = "Zero-Knowledge E2EE Chat Space"
+            vendor = "Tejas Chandra"
             
             windows {
                 menu = true
-                packagePublisher = "Tejas Chandra"
-                packageDescription = "Zero-Knowledge E2EE Chat Space"
             }
         }
     }
