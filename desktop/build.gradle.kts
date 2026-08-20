@@ -35,6 +35,8 @@ compose.desktop {
             
             windows {
                 menu = true
+                packagePublisher = "Tejas Chandra"
+                packageDescription = "Zero-Knowledge E2EE Chat Space"
             }
         }
     }
