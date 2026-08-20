@@ -1,0 +1,115 @@
+name: Publish GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger only on tags matching v*, e.g., v1.0.0, v1.1.0
+
+permissions:
+  contents: write # Grant permission to create and write releases
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Gradle Packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-android-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-android-
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x android/gradlew
+
+    - name: Build Android Debug APK
+      run: |
+        cd android
+        ./gradlew assembleDebug
+
+    - name: Upload Android APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Gradle Packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-desktop-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-desktop-
+
+    - name: Package Windows Release Distribution
+      run: |
+        cd desktop
+        ./gradlew packageDistributionForCurrentOS
+      shell: bash
+
+    - name: Upload Windows MSI Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-msi
+        path: desktop/build/compose/binaries/main/msi/
+
+  create-release:
+    needs: [build-android, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Download Android APK
+      uses: actions/download-artifact@v4
+      with:
+        name: android-apk
+        path: release-artifacts/
+
+    - name: Download Windows MSI
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-msi
+        path: release-artifacts/
+
+    - name: Rename and Prepare Assets
+      run: |
+        mv release-artifacts/app-debug.apk release-artifacts/ChaT-Android.apk
+        ls -la release-artifacts/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          release-artifacts/ChaT-Android.apk
+          release-artifacts/*.msi
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
